@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" rel="stylesheet" />
+  <style>
+
+    /* Styles for the table container */
+    main {
+      padding-top: 70px; /* Adjust this value to leave space for the fixed header */
+      padding-bottom: 50px; /* Adjust this value to leave space for the fixed footer */
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    form {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    input::placeholder{
+      font-weight: lighter ;
+      font-size: small;
+    }
+    
+    input[type="submit"] {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+    #outer{
+        width:100%;
+        text-align: center;
+    }
+    .inner{
+        display: inline-block;
+    }
+    /* Add your additional styles here */
+
+    /* Media queries for mobile devices */
+    @media (max-width: 767px) {
+
+      main {
+        padding-top: 40px;
+        padding-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<main>
+<form>
+    <label for="EmpNum">Employee Number:</label>
+    <input type="text" id="EmpNum" name="EmpNum" placeholder="Enter your employee number" required>
+    
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" placeholder="Enter password" required>
+    <div id="outer">
+        <div class="inner">
+            <button id="login" class="btn btn-success btn-large" style="margin-top: 10px;" onclick="loginCheck(document.getElementById('EmpNum').value,document.getElementById('password').value)" type="button" 
+            value="https://prod-138.westus.logic.azure.com:443/workflows/7711376c22b1446ea5aead56e892c6b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=C6pBU6LFLOP05SGRZYMqGQa28YU8g5whtqx8sL749pQ" >Login</button>
+        </div>
+        <div class="inner">
+            <button id="register" class="btn btn-info btn-large" style="margin-top: 10px;" onclick="Register()" type="button" >Register</button>
+        </div>
+        <div class="inner">
+            <button id="resetpass" class="btn btn-warning btn-large" style="margin-top: 10px;" onclick="ResetPassword(document.getElementById('EmpNum').value)" type="button" 
+            value="https://prod-80.westus.logic.azure.com:443/workflows/d4202d481fb44bc4bbed78241acd66b8/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=uyr76ngu2fyHFKVhuvW_2-Wa8UdeAb5VtukKnpYjHOw" >Reset Password</button>
+        </div>
+    </div>
+    
+</form>
+<label id="status" style="text-align: center;padding-top: 15px;"></label>
+
+</main>
+</body>
+</html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+<script>
+    function loginCheck(empno,pswd) {
+        document.getElementById("login").setAttribute("disabled",true);
+        document.getElementById("status").innerHTML = "Please wait...";
+        var acupdate = '{ "EmployeeNumber" : "' + empno + '", "Password": "' + pswd +'"}';
+        var req = new XMLHttpRequest();
+        var url = "https://prod-138.westus.logic.azure.com:443/workflows/7711376c22b1446ea5aead56e892c6b2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=C6pBU6LFLOP05SGRZYMqGQa28YU8g5whtqx8sL749pQ";
+        req.open("POST", url, true);
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.send(acupdate);
+        req.onreadystatechange = function() { // listen for state changes
+            if (req.readyState == 4 && req.status == 200) { // when completed we can move away
+                window.location.href = "https://site-xsitg.powerappsportals.com/Fetch/?user="+req.responseText;
+                }
+            else if (req.status == 201) {
+              window.location.href = "https://site-xsitg.powerappsportals.com/Registration/";
+                }
+            else if (req.status == 400){
+              document.getElementById("status").innerHTML = "Invalid Employee Number or Password.";
+              document.getElementById("login").removeAttribute("disabled");
+            }
+            }
+    }
+    function Register() {
+        window.location.href = "https://site-xsitg.powerappsportals.com/Registration/";        
+    }
+    function ResetPassword(empno) {
+        window.location.href = "https://site-xsitg.powerappsportals.com/Registration/?user="+empno;  
+    }
+  </script>
