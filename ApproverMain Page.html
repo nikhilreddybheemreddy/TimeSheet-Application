@@ -1,0 +1,71 @@
+<head>
+    <style>
+        .main{
+            margin-top: 70px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        tr{
+            text-align: left;
+        }
+        @media (max-width: 767px) {
+            .main{
+                margin-top: 50px;
+                margin-bottom: 30px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+{% fetchxml submissions %}
+<fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+  <entity name="cr65c_timesheetlist">
+    <attribute name="cr65c_timeentrydate" />
+    <attribute name="cr65c_supervisorid" />
+    <attribute name="cr65c_employeenumber" />
+    <attribute name="cr65c_employeeid" />
+    <attribute name="cr65c_approvalstatus" />
+    <filter type="and">
+        <condition attribute="cr65c_supervisorid" operator="eq" value="{{request.params['user']}}" />
+        <condition attribute="cr65c_approvalstatus" operator="eq" value="{{request.params['status']}}" />
+    </filter>
+    <order attribute="cr65c_employeenumber" />
+  </entity>
+</fetch>
+{% endfetchxml %}
+{% if submissions.results.entities.size > 0 %}
+    <div class="main">
+        <table id="tblSupGrpData" class="table" style="border: 1px solid;width: 100%;">
+            <thead class="thead-dark">
+                <tr class="table-heading">
+                    <th>Employee</th>
+                    <th>Time Entry Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in submissions.results.entities %}
+                <tr>
+                    <td id="emp">{{result.cr65c_employeenumber}}</td>
+                    <td id="dt">{{result.cr65c_timeentrydate | date: "MM-dd-yyyy"}}</td>
+                    <td><button id="myButton|{{result.cr65c_employeeid}}|{{result.cr65c_timeentrydate | date: 'MM-dd-yyyy'}}" class="btn btn-success btn-large" style="margin-bottom: 20px;" onclick="viewTimeSheet(this)" >View</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% else %}
+    <div class="main">
+        <label >No submissions to approve. You will be notified on the new submissions.</label>
+    </div>
+{% endif %}
+
+    <script type="text/javascript">
+        function viewTimeSheet(obj) {
+            var idVal = obj.id;
+            var emp = idVal.split('|')[1];
+            let dateStr = idVal.split('|')[2];
+            location.href = "https://site-xsitg.powerappsportals.com/Approvals/ApprovalsDetail/?emp="+emp+"&dt="+dateStr;
+        };
+    </script>

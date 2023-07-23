@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" rel="stylesheet" />
+  <style>
+
+    /* Styles for the table container */
+    main {
+      padding-top: 50px; /* Adjust this value to leave space for the fixed header */
+      padding-bottom: 50px; /* Adjust this value to leave space for the fixed footer */
+    }
+
+    .EmployeeDetails{
+        position: fixed;
+        top: 70px;
+    }
+
+    .MergeBar{
+        float: left; 
+        width: 100%;
+        position:fixed;
+        top: 162px;
+        padding: 3px;
+    }
+
+    .TableDiv{
+        float: left; 
+        width: 100%; 
+        margin-top: 160px;
+        height: 300px;
+        overflow-y: auto;
+    }
+
+    .SubmitDiv{
+        column-gap: 10px;
+        position:fixed;
+        bottom: 28px;
+    }
+
+    /* Styles for the table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    /* Styles for the table header row */
+    thead tr {
+      position: sticky;
+      top: 0px; /* Adjust this value to match the height of the fixed header */
+      background-color: #f0f0f0;
+    }
+
+    /* Styles for the table cells */
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+
+    /* Add your additional styles here */
+
+    /* Media queries for mobile devices */
+    @media (max-width: 767px) {
+
+      main {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+    .EmployeeDetails{
+        top: 50px;
+    }
+
+    .MergeBar{
+        float: left; 
+        width: 100%;
+        position:fixed;
+        top: 142px;
+        padding: 3px;
+    }
+
+    .TableDiv{
+        float: left; 
+        width: 100%; 
+        margin-top: 165px;
+        height: 400px;
+        overflow-y: auto;
+    }
+
+    .SubmitDiv{
+        bottom: 0px;
+    }
+
+      thead tr {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+    {% fetchxml timesheetlist %}
+<fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="false">
+    <entity name="cr65c_timesheetlist">
+        <attribute name="cr65c_starttimetxt" />
+        <attribute name="cr65c_timesheetlistid" />
+        <attribute name="cr65c_jobnumber" />
+        <attribute name="cr65c_endtimetxt" />
+        <attribute name="cr65c_employeenumber" />
+        <attribute name="cr65c_client" />
+        <attribute name="cr65c_servicetxt" />
+        <attribute name="cr65c_orderdescription" />
+        <attribute name="cr65c_sqldata" />
+        <attribute name="cr65c_employeeid" />
+        <attribute name="cr65c_approvalstatus" />
+        <attribute name="cr65c_starttime" />
+        <attribute name="cr65c_endtime" />
+        <attribute name="cr65c_overtime" />
+        <attribute name="cr65c_department" />
+        <attribute name="cr65c_jobdetail" />
+        <filter type="and">
+          <condition attribute="cr65c_employeeid" operator="eq" value="{{request.params['emp']}}" />
+          <condition attribute="cr65c_timeentrydate" operator="on" value="{{request.params['dt']}}" />
+        </filter>
+        <order attribute="cr65c_starttimetxt" />
+      </entity>
+  </fetch>
+{% endfetchxml %}
+
+{% fetchxml timesheetlistStatus %}
+<fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="false">
+    <entity name="cr65c_timesheetlist">
+        <attribute name="cr65c_approvalstatus" />
+        <filter type="and">
+            <condition attribute="cr65c_employeeid" operator="eq" value="{{request.params['emp']}}" />
+            <condition attribute="cr65c_timeentrydate" operator="on" value="{{request.params['dt']}}" />
+            <condition attribute="cr65c_approvalstatus" operator="not-null" />
+        </filter>
+        <order attribute="cr65c_starttimetxt" />
+      </entity>
+  </fetch>
+{% endfetchxml %}
+
+{% fetchxml timesheetcustomerview %}
+<fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+    <entity name="cr65c_tscustomerview">
+        <attribute name="cr65c_customerid" />
+        <attribute name="cr65c_customername" />
+        <filter>
+          <condition attribute="cr65c_warehouseid" operator="eq" value="{{request.params['wh']}}" />
+        </filter>
+    </entity>
+</fetch>
+{% endfetchxml %}
+
+{% fetchxml jobnumbersview %}
+<fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+    <entity name="cr65c_tscustomerview">
+        <attribute name="cr65c_customerid" />
+        <attribute name="cr65c_customername" />
+        <attribute name="cr65c_jobname" />
+        <attribute name="cr65c_jobnumber" />
+        <filter>
+          <condition attribute="cr65c_warehouseid" operator="eq" value="{{request.params['wh']}}" />
+        </filter>
+    </entity>
+</fetch>
+{% endfetchxml %}
+
+{% fetchxml departmentsview %}
+    <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+      <entity name="cr65c_tsdepartmentserviceview">
+        <attribute name="cr65c_department" />
+        <filter>
+          <condition attribute="cr65c_warehouseid" operator="eq" value="{{request.params['wh']}}" />
+        </filter>
+        <order attribute="cr65c_department" />
+      </entity>
+    </fetch>
+{% endfetchxml %}
+
+{% fetchxml servicesview %}
+    <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+        <entity name="cr65c_tsdepartmentserviceview">
+            <attribute name="cr65c_department" />
+            <attribute name="cr65c_serviceid" />
+            <attribute name="cr65c_servicename" />
+            <filter>
+              <condition attribute="cr65c_warehouseid" operator="eq" value="{{request.params['wh']}}" />
+            </filter>
+        </entity>
+    </fetch>
+{% endfetchxml %}
+
+<div class="EmployeeDetails">
+    <label>Employee : </label>
+    <label style="font-weight: normal;">{{timesheetlist.results.entities[0].cr65c_employeenumber}}</label><br>
+    <label>Date : </label>
+    <label style="font-weight: normal;">{{request.params['dt'] | date: "MM-dd-yyyy"}}</label><br>
+    <button id="myButton" class="btn btn-success btn-large" style="margin-bottom: 20px;">Fetch TimeSheet for another Date</button>
+</div>
+{% if timesheetlistStatus.results.entities[0].cr65c_approvalstatus.Value == '161350000' or timesheetlistStatus.results.entities[0].cr65c_approvalstatus.Value == '161350003' %}
+<div class="alert alert-warning MergeBar" role="alert">
+    <span class="glyphicon glyphicon-info-sign"></span>
+    <label id="processingMsg">TIME SHEET</label>    
+    <div style="float: right;">
+        <button id="mergebtn" class="btn btn-info btn-large" style="margin-top: 1px;"><i class="glyphicon glyphicon-plus"></i> Merge</button>
+    </div>
+</div>
+{% endif %}
+<div class="TableDiv" id="tableDiv">
+        <table id="tblData" width="100%" class="table" style="border-collapse: collapse;">
+            <thead class="thead-dark">
+                <tr class="table-heading">
+                    <th><input type="checkbox" id="checkedAll" style="margin-left:30px"/></th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Client</th>
+                    <th>Department</th>
+                    <th>Service</th>
+                    <th>Job Number</th>
+                    <th>Over Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in timesheetlist.results.entities %}
+                {% assign timesheetids= result.cr65c_timesheetlistid %}
+                {% assign mainCustomer = result.cr65c_client %}
+                {% assign mainService = result.cr65c_servicetxt %}
+                {% assign mainJobnumber = result.cr65c_jobnumber %}
+                {% assign mainDepartment = result.cr65c_department %}
+                <tr id="{{result.cr65c_timesheetlistid}}">
+                    <td><input type="checkbox" id="{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" class="timesheetIDs" style="margin-left: 30px" onchange="pushArrayCheckBox(this);"></td>
+                    <td>
+                           <input type="time" name="{{result.cr65c_starttime}}" id="starttime|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" value="{{result.cr65c_starttimetxt}}" onchange="pushArray(this);" disabled>
+                    </td>    
+                    <td>
+                           <input type="time" name="{{result.cr65c_endtime}}" id="endtime|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" value="{{result.cr65c_endtimetxt}}" onchange="pushArray(this);" disabled>
+                    </td>
+                    <td>
+                        {% if result.cr65c_sqldata == '1' %}
+                            <select name="client" id="client|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" onchange="pushArray(this);" disabled>
+                                {% for Val in timesheetcustomerview.results.entities %}
+                                {% assign subCustomer= Val.cr65c_customerid %}
+                                    {% if mainCustomer == subCustomer %}
+                                        <option value="{{Val.cr65c_customerid}}" selected>{{Val.cr65c_customername}}</option>
+                                    {% else %}
+                                        <option value="{{Val.cr65c_customerid}}">{{Val.cr65c_customername}}</option>
+                                    {% endif %}    
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <select name="client" id="client|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" onchange="pushArray(this);createOptionSet(this);">
+                                <option value="">Select a customer</option>
+                                {% for Val in timesheetcustomerview.results.entities %}
+                                {% assign subCustomer= Val.cr65c_customerid %}
+                                    {% if mainCustomer == '' %}
+                                        <option value="" selected></option>
+                                    {% elsif mainCustomer == subCustomer %}
+                                        <option value="{{Val.cr65c_customerid}}" selected>{{Val.cr65c_customername}}</option>
+                                    {% else %}
+                                        <option value="{{Val.cr65c_customerid}}">{{Val.cr65c_customername}}</option>
+                                    {% endif %}    
+                                {% endfor %}
+                            </select>
+                        {% endif %} 
+                    </td>   
+                    <td>
+                        {% if result.cr65c_sqldata == '1' %}
+                        <select name="department" id="department|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" onchange="pushArray(this);createOptionSet(this);" disabled>
+                            {% for Val in departmentsview.results.entities %}
+                            {% assign subDepartment = Val.cr65c_department %}
+                            {% if mainDepartment == subDepartment %}
+                            <option value="{{Val.cr65c_department}}" name="{{Val.cr65c_department}}" selected>{{Val.cr65c_department}}</option>
+                            {% endif %}  
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <select name="department" id="department|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" onchange="pushArray(this);createOptionSet(this);">
+                            <option value="">Select a Department</option>
+                            {% for Val in departmentsview.results.entities %}
+                            {% assign subDepartment = Val.cr65c_department %}
+                            {% if mainDepartment == subDepartment %}
+                            <option value="{{Val.cr65c_department}}" name="{{Val.cr65c_department}}" selected>{{Val.cr65c_department}}</option>
+                            {% else %}
+                            <option value="{{Val.cr65c_department}}" name="{{Val.cr65c_department}}">{{Val.cr65c_department}}</option>
+                            {% endif %} 
+                            {% endfor %}
+                        </select>
+                        {% endif %} 
+                    </td> 
+                    <td>
+                        {% if result.cr65c_sqldata == '1' %}
+                            <select name="service" id="service|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" onchange="pushArray(this);" disabled>
+                                {% for Val in servicesview.results.entities %}
+                                {% assign subService= Val.cr65c_servicename %}
+                                    {% if mainService == subService %}
+                                        <option value="{{Val.cr65c_serviceid}}" name="{{Val.cr65c_department}}" selected>{{Val.cr65c_servicename}}</option>
+                                    {% else %}
+                                        <option value="{{Val.cr65c_serviceid}}" name="{{Val.cr65c_department}}">{{Val.cr65c_servicename}}</option>
+                                    {% endif %}     
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <select name="service" id="service|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" onchange="pushArray(this);" >
+                                <option value="">Select a service</option>
+                                {% for Val in servicesview.results.entities %}
+                                {% assign subService= Val.cr65c_servicename %}
+                                    {% if mainService == subService %}
+                                        <option value="{{Val.cr65c_serviceid}}" name="{{Val.cr65c_department}}" selected>{{Val.cr65c_servicename}}</option>
+                                    {% endif %}     
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select name="jobnumber" id="jobnumber|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" timesheetid="{{result.cr65c_timesheetlistid}}" onchange="pushArray(this);" >
+                            <option value="">Select a JobNumber</option>
+                            {% for Val in jobnumbersview.results.entities %}
+                            {% assign subJobnumber= Val.cr65c_jobnumber %}
+                            {% if mainJobnumber == subJobnumber %}
+                                <option value="{{Val.cr65c_jobnumber}}" name="{{Val.cr65c_customername}}" selected>{{Val.cr65c_jobnumber}} - {{Val.cr65c_jobname}}</option>
+                            {% endif %}     
+                            {% endfor %}
+                        </select>
+                    </td>  
+                    <td>
+                        {% if result.cr65c_overtime == "on" %}
+                        <input type="checkbox" id="overtime|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" class="timesheetIDs" style="margin-left: 30px" checked>
+                        {% else %}
+                        <input type="checkbox" id="overtime|{{result.cr65c_timesheetlistid}}|{{result.cr65c_sqldata}}" class="timesheetIDs" style="margin-left: 30px">
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% if timesheetlistStatus.results.entities[0].cr65c_approvalstatus.Value == '161350000' or timesheetlistStatus.results.entities[0].cr65c_approvalstatus.Value == '161350003' %}
+<div class="SubmitDiv" id="submitDiv">
+    <button id="myButtonApp" class="btn btn-success btn-large" >Submit For Approval</button>
+    <label id="approvalStatusLabel" style="font-weight: normal;"></label>
+    <label id="sqlFlag" style="visibility: hidden;">{{timesheetlistStatus.results.entities[0].cr65c_sqldata}}</label>
+    <select id="alljobnumbers" style="visibility: hidden;">
+        {% for Val in jobnumbersview.results.entities %}
+            <option value="{{Val.cr65c_jobnumber}}" name="{{Val.cr65c_customername}}">{{Val.cr65c_jobnumber}} - {{Val.cr65c_jobname}}</option>     
+        {% endfor %}
+    </select>
+    <select id="allservices" style="visibility: hidden;">
+        {% for Val in servicesview.results.entities %}
+        <option value="{{Val.cr65c_serviceid}}" name="{{Val.cr65c_department}}">{{Val.cr65c_servicename}}</option>     
+        {% endfor %}
+    </select>
+</div>
+{% endif %}
+
+
+  </main>
+ 
+</body>
+</html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+<script type="text/javascript">
+    window.onload = function(){
+        if(document.getElementById("sqlFlag").innerHTML == "1"){
+            localStorage.setItem("editedKey", 1);
+        }
+        var content = document.getElementById('tableDiv');
+        var submitContent = document.getElementById('submitDiv');
+
+      // Function to adjust font size based on zoom level
+      function adjustHeight() {
+        var viewportHeight = window.innerHeight;
+        
+        if(viewportHeight > 601){
+            var adjustedHeight = viewportHeight - 300;
+            content.style.height = adjustedHeight + 'px';
+            submitContent.style.bottom = (viewportHeight - 320)/10 + 'px';
+        }
+      }
+
+      // Adjust height on page load
+      adjustHeight();
+
+      // Detect zoom changes
+      window.addEventListener('resize', adjustHeight);
+    }
+    var selectElements = document.querySelectorAll('select[name="client"]');
+    var selectJobElements = document.querySelectorAll('select[name="jobnumber"]');
+    for (var i = 0; i < selectElements.length; i++) {
+      var selectElement = selectElements[i];
+      var jobValue = selectJobElements[i].value;
+      // Check if the select element has a selected option
+      if (selectElement.selectedIndex !== -1 && jobValue == "") {
+        // Call your custom function for select elements with a selected option
+        createOptionSet(selectElement);
+      }
+    }
+    
+function createOptionSet(currentObject){
+    var str = currentObject.id;
+    var res = str.split("|");
+    var contId = res[1];
+    var sqlFlag = res[2];
+
+    // Get the select element
+    if (res[0].startsWith('client')) {
+        var optionSet = document.getElementById("alljobnumbers");
+        var newoptionSet = document.getElementById("jobnumber|" + contId + "|" + sqlFlag);
+        var filterValue = getSelectedText("client|" + contId + "|" + sqlFlag);
+        var defaultoption = "Select a JobNumber";
+    } 
+    else if(res[0].startsWith('department')) {
+        var optionSet = document.getElementById("allservices");
+        var newoptionSet = document.getElementById("service|" + contId + "|" + sqlFlag);
+        var filterValue = getSelectedText("department|" + contId + "|" + sqlFlag);
+        var defaultoption = "Select a Service";
+    }
+    else{
+        return
+    }
+    newoptionSet.innerHTML = "";
+    var opt = document.createElement('option');
+    opt.value = "";
+    opt.innerHTML = defaultoption;
+    newoptionSet.appendChild(opt);
+
+    var options = optionSet.options;
+
+    for (var i = 0; i < options.length; i++) {
+      var option = options[i];
+      var optionValue = option.getAttribute('name');
+
+         // Apply the filter condition here
+      if (optionValue === filterValue) {
+        var opt = document.createElement('option');
+        opt.value = option.value;
+        opt.innerHTML = option.innerHTML;
+        newoptionSet.appendChild(opt);
+      } 
+    }
+}
+
+document.getElementById("myButton").onclick = function () {
+    location.href = "https://site-xsitg.powerappsportals.com/Fetch/?user={{request.params['emp']}}";
+};
+
+document.getElementById("myButtonApp").onclick = function () {
+    var validateFlag = setGlobalArray();
+    if(validateFlag == 0 && globalArray.length > 0){
+        var userResp = confirm("Are you sure you want to submit your timesheet?");  
+        if(userResp){
+            update('U');
+            submitTimeSheet();
+            localStorage.setItem("editedKey", 0);
+        }
+    }
+    else if(globalArray.length == 0){
+        alert("Please make sure to fill atleast one timeslot with client, service and job number to submit.");
+    }
+    else{
+        alert("Please make sure all lines submitted have client, service and job number entered.");
+    }
+}
+
+function getSelectedText(elementId) {
+    var elt = document.getElementById(elementId);
+
+    if (elt.selectedIndex == -1)
+        return null;
+    return elt.options[elt.selectedIndex].text;
+}
+
+function submitTimeSheet(){
+    document.getElementById("myButtonApp").setAttribute("disabled",true);
+    document.getElementById("approvalStatusLabel").innerHTML = "Submitting..."
+    updateStatus();
+    const weburl = new URL(window.location.href); 
+    const empid = weburl.searchParams.get('emp');
+    const dt = weburl.searchParams.get('dt');
+    var dtString  = new Date(dt);
+    var acupdate = '{ "employeeID" : "' + empid + '", "timeEntryDate": "' + dt +'"}';
+    var req = new XMLHttpRequest();
+    var url = "https://prod-101.westus.logic.azure.com:443/workflows/ee186a372cd1480d8bf274cc9114322e/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=fhTbo_AME656dabwoJdyyf1pG284rXIyMzk9EO_yNvI";
+    req.open("POST", url, true);
+    req.setRequestHeader('Content-Type', 'application/json');
+    req.send(acupdate);
+    req.onreadystatechange = function() { // listen for state changes
+        if (req.readyState == 4 && req.status == 200) { // when completed we can move away
+              document.getElementById("approvalStatusLabel").innerHTML = "Submitted"
+              alert("TimeSheet Submitted Successfully for date - {{request.params['dt'] | date: 'MM-dd-yyyy'}}");
+              location.href = "https://site-xsitg.powerappsportals.com/Fetch/?user="+empid;
+            }
+        }
+}
+
+function setGlobalArray(){
+    var overtime = "";
+    globalArray.length =0;
+    const tableRows = document.getElementsByTagName("tr");
+    for(var i = 1;i<tableRows.length;i++){
+        var row = tableRows[i];
+        var id = row.getAttribute("id");
+        var starttime= row.getElementsByTagName("input")[1].value;
+        var endtime= row.getElementsByTagName("input")[2].value;
+        var client= row.getElementsByTagName("select")[0].value;
+        var clientname= getSelectedText(row.getElementsByTagName("select")[0].id);
+        var department= row.getElementsByTagName("select")[1].value;
+        var service= getSelectedText(row.getElementsByTagName("select")[2].id);
+        var serviceid = row.getElementsByTagName("select")[2].value;
+        var jobnumber= row.getElementsByTagName("select")[3].value;
+        var jobdetail= getSelectedText(row.getElementsByTagName("select")[3].id);
+        if(row.getElementsByTagName("input")[3].checked === true){
+            overtime= "on";
+        }
+        else{
+            overtime="off";
+        }
+        if(client != "" && service != "" && jobnumber != ""){
+            globalArray.push({
+                id: id,
+                starttime: starttime,
+                endtime: endtime,
+                client: client,
+                clientname: clientname,
+                department: department,
+                service: service,
+                serviceid: serviceid,
+                jobnumber: jobnumber,
+                jobdetail: jobdetail,
+                overtime: overtime
+            })
+        }
+        else if (!((client != '' && serviceid !='' && jobnumber !='') ||
+            (client == '' && serviceid =='' && jobnumber ==''))) {
+                return 1;
+        }
+        else{
+            continue;
+        }
+    }
+    return 0;
+}
+
+(function(webapi, $){
+    function safeAjax(ajaxOptions) {
+        var deferredAjax = $.Deferred();
+
+        shell.getTokenDeferred().done(function (token) {
+            // add headers for AJAX
+            if (!ajaxOptions.headers) {
+                $.extend(ajaxOptions, {
+                    headers: {
+                        "__RequestVerificationToken": token
+                    }
+                }); 
+            } else {
+                ajaxOptions.headers["__RequestVerificationToken"] = token;
+            }
+            $.ajax(ajaxOptions)
+                .done(function(data, textStatus, jqXHR) {
+                    validateLoginSession(data, textStatus, jqXHR, deferredAjax.resolve);
+                }).fail(deferredAjax.reject); //AJAX
+        }).fail(function () {
+            deferredAjax.rejectWith(this, arguments); // on token failure pass the token AJAX and args
+        });
+
+        return deferredAjax.promise();	
+    }
+    webapi.safeAjax = safeAjax;
+})(window.webapi = window.webapi || {}, jQuery)
+
+var globalArray = [];
+
+function pushArray(currentObject) {
+    var overtime = "";
+    var str = currentObject.id;
+    var res = str.split("|");
+    var contId = res[1];
+    var sqlFlag = res[2];
+    var checkbox = document.getElementById(contId + "|" + sqlFlag).checked;
+    var starttime = document.getElementById("starttime|" + contId + "|" + sqlFlag).value;
+    var endtime = document.getElementById("endtime|" + contId + "|" + sqlFlag).value;
+    var endDateTime = document.getElementById("endtime|" + contId + "|" + sqlFlag).getAttribute("name");
+    var client = document.getElementById("client|" + contId + "|" + sqlFlag).value;
+    var clientname = getSelectedText("client|" + contId + "|" + sqlFlag);
+    var department = document.getElementById("department|" + contId + "|" + sqlFlag).value;
+    var service = getSelectedText("service|" + contId + "|" + sqlFlag);
+    var serviceid = document.getElementById("service|" + contId + "|" + sqlFlag).value;
+    var jobnumber = document.getElementById("jobnumber|" + contId + "|" + sqlFlag).value;
+    var jobdetail = getSelectedText("jobnumber|" + contId + "|" + sqlFlag);
+    if(document.getElementById("overtime|" + contId + "|" + sqlFlag).checked === true){
+        overtime = "on";
+    }
+    else{
+            overtime="off";
+    }
+    let objIndex = globalArray.findIndex((obj => obj.id == contId));
+    if (objIndex == -1) {
+        globalArray.push({
+            id: contId,
+            starttime: starttime,
+            endtime: endtime,
+            endDateTime: endDateTime,
+            client: client,
+            clientname: clientname,
+            department: department,
+            service: service,
+            serviceid:serviceid,
+            jobnumber: jobnumber,
+            jobdetail: jobdetail,
+            checkboxval: checkbox,
+            sqlFlag: sqlFlag,
+            overtime: overtime
+        })
+    } else {
+        globalArray[objIndex].starttime = starttime;
+        globalArray[objIndex].endtime = endtime;
+        globalArray[objIndex].endDateTime= endDateTime;
+        globalArray[objIndex].client = client;
+        globalArray[objIndex].clientname = clientname;
+        globalArray[objIndex].department = department;
+        globalArray[objIndex].service = service;
+        globalArray[objIndex].serviceid = serviceid;
+        globalArray[objIndex].jobnumber = jobnumber;
+        globalArray[objIndex].jobdetail = jobdetail;
+        globalArray[objIndex].checkboxval = checkbox;
+        globalArray[objIndex].sqlFlag = sqlFlag;
+        globalArray[objIndex].overtime = overtime;
+    }
+}
+
+function pushArrayCheckBox(currentObject) {
+    var overtime = "";
+    var str = currentObject.id;
+    var res = str.split("|");
+    var contId = res[0];
+    var sqlFlag = res[1];
+    var checkbox = document.getElementById(contId + "|" + sqlFlag).checked;
+    var starttime = document.getElementById("starttime|" + contId + "|" + sqlFlag).value;
+    var endtime = document.getElementById("endtime|" + contId + "|" + sqlFlag).value;
+    var endDateTime = document.getElementById("endtime|" + contId + "|" + sqlFlag).getAttribute("name");
+    var client = document.getElementById("client|" + contId + "|" + sqlFlag).value;
+    var clientname = getSelectedText("client|" + contId + "|" + sqlFlag);
+    var department = document.getElementById("department|" + contId + "|" + sqlFlag).value;
+    var service = getSelectedText("service|" + contId + "|" + sqlFlag);
+    var serviceid = document.getElementById("service|" + contId + "|" + sqlFlag).value;
+    var jobnumber = document.getElementById("jobnumber|" + contId + "|" + sqlFlag).value;
+    var jobdetail = getSelectedText("jobnumber|" + contId + "|" + sqlFlag);
+    if(document.getElementById("overtime|" + contId + "|" + sqlFlag).checked === true){
+        overtime = "on";
+    } 
+    else{
+        overtime="off";
+    }
+    let objIndex = globalArray.findIndex((obj => obj.id == contId));
+    if (objIndex == -1) {
+        globalArray.push({
+            id: contId,
+            starttime: starttime,
+            endtime: endtime,
+            endDateTime: endDateTime,
+            client: client,
+            clientname: clientname,
+            department: department,
+            service: service,
+            serviceid: serviceid,
+            jobnumber: jobnumber,
+            jobdetail: jobdetail,
+            checkboxval: checkbox,
+            sqlFlag: sqlFlag,
+            overtime: overtime
+        })
+    } else {
+        globalArray[objIndex].starttime = starttime;
+        globalArray[objIndex].endtime = endtime;
+        globalArray[objIndex].endDateTime= endDateTime;
+        globalArray[objIndex].client = client;
+        globalArray[objIndex].clientname = clientname;
+        globalArray[objIndex].department = department;
+        globalArray[objIndex].service = service;
+        globalArray[objIndex].serviceid = serviceid;
+        globalArray[objIndex].jobnumber = jobnumber;
+        globalArray[objIndex].jobdetail = jobdetail;
+        globalArray[objIndex].checkboxval = checkbox;
+        globalArray[objIndex].sqlFlag = sqlFlag;
+        globalArray[objIndex].overtime = overtime;
+    }
+}
+
+function update(flag) {
+    var i;
+    for (i = 0; i < globalArray.length; i++) { 
+        document.getElementById("processingMsg").innerText = "Processing....";
+        try {
+            let value = {
+                "cr65c_starttimetxt": globalArray[i].starttime,
+                "cr65c_endtimetxt": globalArray[i].endtime,
+                "cr65c_client": globalArray[i].client,
+                "cr65c_clientname": globalArray[i].clientname,
+                "cr65c_department": globalArray[i].department,
+                "cr65c_servicetxt": globalArray[i].service,
+                "cr65c_serviceid": globalArray[i].serviceid,
+                "cr65c_jobnumber": globalArray[i].jobnumber,
+                "cr65c_jobdetail": globalArray[i].jobdetail,
+                "cr65c_overtime": globalArray[i].overtime
+            };
+            if (flag == "U") {
+                webapi.safeAjax({
+                    type: "PATCH",
+                    url: "/_api/cr65c_timesheetlists(" + globalArray[i].id + ")",
+                    contentType: "application/json",
+                    data: JSON.stringify(value),
+                    success: function(res) {
+                        document.getElementById("processingMsg").innerText = "Records updated successfully."
+                    }
+                });
+            } else if (flag == "D") {
+                if(globalArray[i].sqlFlag == 0){
+                    webapi.safeAjax({
+                    type: "DELETE",
+                    url: "/_api/cr65c_timesheetlists(" + globalArray[i].id + ")",
+                    contentType: "application/json",
+                    success: function(res) {
+                        document.getElementById("processingMsg").innerText = "Records deleted successfully.";
+                        var editedIndex = localStorage.getItem("editedKey");
+                        localStorage.setItem("editedKey", Number(editedIndex) + 1);
+                        javascript:location.reload(true);
+                      }
+                    });
+                }
+                else{
+                    document.getElementById("processingMsg").innerText = "Records fetched from backend cannot be deleted.";
+                }
+            }
+        } 
+        catch (e) {
+                alert(e.message);
+            }
+    }
+}
+
+function create() {
+    var fname = prompt("Please enter your first name", "First Name");
+    var lname = prompt("Please enter your last name", "Last Name");
+    var email = prompt("Please enter your email", "Email");
+    var phone = prompt("Please enter your phone number", "Phone Number");
+    var recordObj = {
+        "cr65c_starttimetxt": fname,
+        "cr65c_endtimetxt": lname,
+        "cr65c_client": email,
+        "cr65c_servicetxt": email,
+        "cr65c_jobnumber": phone
+    };
+    document.getElementById("processingMsg").innerHTML = "Creating record...";
+    webapi.safeAjax({
+        type: "POST",
+        url: "/_api/contacts",
+        contentType: "application/json",
+        data: JSON.stringify(recordObj),
+        success: function(res, status, xhr) {
+            document.getElementById("processingMsg").innerHTML = "Records created successfully. Refresh the page. ID:" + xhr.getResponseHeader("entityid");
+        }
+    });
+}
+
+document.getElementById("mergebtn").onclick = function() {
+    for(i = 0; i < globalArray.length; i++){
+        if (globalArray[i].checkboxval != 1){
+            globalArray.splice(i, 1); 
+        }
+    }
+    globalArray.sort((current, next) => current.starttime.localeCompare(next.starttime));
+    if(globalArray.length >=2){
+        for(i=1;i<=globalArray.length-1;i++){
+            if(globalArray[i-1].endtime != globalArray[i].starttime){
+                alert("Consecutive slots can only be merged. Please select accordingly.");
+                return;
+            }
+            if(globalArray[i].client != "" && (globalArray[0].client != globalArray[i].client)){
+            alert("Multiple clients have been selected. Please select only one client on the top slot for merging.");
+            return;
+            }
+            else if(globalArray[i].serviceid != "" && globalArray[0].serviceid != globalArray[i].serviceid){
+            alert("Multiple services have been selected. Please select only one service on the top slot for merging.");
+            return;
+            }
+            else if(globalArray[i].jobnumber && globalArray[0].jobnumber != globalArray[i].jobnumber){
+            alert("Multiple jobnumbers have been entered. Please enter only one jobnumber on the top slot for merging.");
+            return;
+            }
+            
+        }
+        var i=0;
+        document.getElementById("processingMsg").innerText = "Processing....";
+        let value = {
+            "cr65c_starttimetxt": globalArray[i].starttime,
+            "cr65c_endtimetxt": globalArray[globalArray.length-1].endtime,
+            "cr65c_endtime":globalArray[globalArray.length-1].endDateTime,
+            "cr65c_client": globalArray[i].client,
+            "cr65c_clientname": globalArray[i].clientname,
+            "cr65c_department": globalArray[i].department,
+            "cr65c_servicetxt": globalArray[i].service,
+            "cr65c_serviceid": globalArray[i].serviceid,
+            "cr65c_jobnumber": globalArray[i].jobnumber,
+            "cr65c_jobdetail": globalArray[i].jobdetail,
+            "cr65c_overtime": globalArray[i].overtime
+        };
+        webapi.safeAjax({
+            type: "PATCH",
+            url: "/_api/cr65c_timesheetlists(" + globalArray[i].id + ")",
+            contentType: "application/json",
+            data: JSON.stringify(value),
+            success: function(res) {
+                document.getElementById("processingMsg").innerText = "Processing";
+            }
+        });
+        for (i = 1; i < globalArray.length; i++) { //update checked row changes 
+            if(globalArray[i].sqlFlag == 0){
+                webapi.safeAjax({
+                type: "DELETE",
+                url: "/_api/cr65c_timesheetlists(" + globalArray[i].id + ")",
+                contentType: "application/json",
+                success: function(res) {
+                    document.getElementById("processingMsg").innerText = "Records merged successfully.";
+                    var editedIndex = localStorage.getItem("editedKey");
+                    localStorage.setItem("editedKey", Number(editedIndex) + 1);
+                    javascript:location.reload(true);
+                    }
+                });
+            }
+            else{
+                document.getElementById("processingMsg").innerText = "Records fetched from backend cannot be deleted.";
+            }           
+        }
+    }
+    else{
+        alert("Please select atleast 2 records to merge.");
+    }
+}
+
+function updateStatus(){
+        var allRows = document.getElementsByTagName("tr"); 
+        let value = {
+        "cr65c_approvalstatus": "161350001"
+        };
+        webapi.safeAjax({
+                        type: "PATCH",
+                        url: "/_api/cr65c_timesheetlists(" + allRows[1].id + ")",
+                        contentType: "application/json",
+                        data: JSON.stringify(value),
+                        success: function(res) {
+                         console.log("done");
+                        }
+                    });
+    
+    }
+
+$(document).ready(function() {
+    $('#checkedAll').on('click', function() {
+        if (this.checked) {
+            $('.timesheetIDs').each(function() {
+                this.checked = true;
+                $(this).parent().parent().css({
+                    "color": "red",
+                    "background-color": "#faffd6"
+                });
+            });
+        } else {
+            $('.timesheetIDs').each(function() {
+                this.checked = false;
+                $(this).parent().parent().css({
+                    "color": "black",
+                    "background-color": "#ffffff"
+                });
+            });
+        }
+    });
+    $('.timesheetIDs').on('click', function() {
+        if ($('.timesheetIDs:checked').length == $('.timesheetIDs').length) {
+            $('#checkedAll').prop('checked', true);
+            $('.timesheetIDs').each(function() {
+                $(this).parent().parent().css({
+                    "color": "red",
+                    "background-color": "#faffd6"
+                });
+            });
+            $(this).parent().parent().css({
+                "color": "black",
+                "background-color": "#ffffff"
+            });
+        } else {
+            $('#checkedAll').prop('checked', false);
+            $(this).parent().parent().css({
+                "color": "black",
+                "background-color": "#ffffff"
+            });
+        }
+    });
+});
+</script>

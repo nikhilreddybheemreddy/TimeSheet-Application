@@ -1,0 +1,250 @@
+<style>
+    .Main {
+      padding-top: 70px; /* Adjust this value to leave space for the fixed header */
+      padding-bottom: 30px; /* Adjust this value to leave space for the fixed footer */
+    }
+    @media (max-width: 767px) {
+
+        .main {
+          padding-top: 10px;
+          padding-bottom: 10px;
+        }
+    }
+</style>
+{% fetchxml timesheetlist %}
+    <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="false">
+        <entity name="cr65c_timesheetlist">
+            <attribute name="cr65c_starttimetxt" />
+            <attribute name="cr65c_timesheetlistid" />
+            <attribute name="cr65c_jobdetail" />
+            <attribute name="cr65c_endtimetxt" />
+            <attribute name="cr65c_employeenumber" />
+            <attribute name="cr65c_clientname" />
+            <attribute name="cr65c_servicetxt" />
+            <attribute name="cr65c_orderdescription" />
+            <attribute name="cr65c_sqldata" />
+            <attribute name="cr65c_employeeid" />
+            <attribute name="cr65c_supervisorid" />
+            <filter type="and">
+              <condition attribute="cr65c_employeeid" operator="eq" value="{{request.params['emp']}}" />
+              <condition attribute="cr65c_timeentrydate" operator="on" value="{{request.params['dt'] | date: 'MM-dd-yyyy'}}" />
+            </filter>
+            <order attribute="cr65c_starttimetxt" />
+          </entity>
+      </fetch>
+    {% endfetchxml %}
+
+<div class="Main">
+
+    <button id="myButtonBack" class="btn btn-success btn-large" >Back</button><br>
+
+    <label>Employee : </label>
+    <label style="font-weight: normal;margin-right: 20px;">{{timesheetlist.results.entities[0].cr65c_employeenumber}}</label>
+    <label>Date : </label>
+    <label style="font-weight:normal;">{{request.params['dt'] | date: "MM-dd-yyyy"}}</label><br>
+
+        <table id="tblData" class="table" style="border: 1px solid;width: 100%;">
+            <thead class="thead-dark">
+                <tr class="table-heading">
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Job Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in timesheetlist.results.entities %}
+                {% assign mainCustomer = result.cr65c_customer.value %}
+                {% assign mainService = result.cr65c_service.value %}
+                {% assign mainJobnumber = result.cr65c_jobnumber.value %}
+                <tr id="{{result.cr65c_timesheetlistid}}">
+                    <td>{{result.cr65c_starttimetxt}}</td>    
+                    <td>{{result.cr65c_endtimetxt}}</td>
+                    <td>{{result.cr65c_clientname}}</td>   
+                    <td>{{result.cr65c_servicetxt}}</td>
+                    <td>{{result.cr65c_jobdetail}}</td>  
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="Container">
+        <button id="myButtonApp" class="btn btn-success btn-large" style="margin-bottom: 20px;" >Approve</button>
+        <button id="myButtonRej" class="btn btn-danger btn-large" style="margin-bottom: 20px;" >Reject</button>
+        <p id="statusPara"></p>
+    </div>
+
+<script>
+document.onreadystatechange = function(e)
+{
+    if (document.readyState === 'complete')
+    {
+        const table = document.getElementsByTagName("tr");  
+        actualStart="06:00";
+        actualEnd="20:00";
+        prevEnd = actualStart;
+        for (var i=1;i<table.length;i++ ) {  
+            var row = table[i];
+            var currentStart = row.getElementsByTagName("td")[0].innerHTML;
+            if(prevEnd != currentStart){
+                var target = document.getElementById(row.getAttribute("id"));
+                var newElement = document.createElement('tr');
+                newElement.setAttribute("id",row.getAttribute("id"));
+                newElement.setAttribute("style", "background-color: #FF6666");
+                newElement.insertCell(0).innerHTML=prevEnd;
+                newElement.insertCell(1).innerHTML=currentStart;
+                newElement.insertCell(2).innerHTML="";
+                newElement.insertCell(3).innerHTML="";
+                newElement.insertCell(4).innerHTML="";
+                target.parentNode.insertBefore(newElement, target);
+                i=i+1
+            }
+            var prevEnd = row.getElementsByTagName("td")[1].innerHTML;
+        }
+        var row = document.getElementsByTagName("tr")[table.length-1];
+        var prevEnd = row.getElementsByTagName("td")[1].innerHTML; 
+        if(prevEnd != actualEnd){
+            var newElement = document.getElementById('tblData').insertRow(-1);
+            newElement.insertCell(0).innerHTML=prevEnd;
+            newElement.insertCell(1).innerHTML=actualEnd;
+            newElement.insertCell(2).innerHTML="";
+            newElement.insertCell(3).innerHTML="";
+            newElement.insertCell(4).innerHTML="";
+            newElement.setAttribute("id",row.getAttribute("id"));
+            newElement.setAttribute("style", "background-color: #FF6666");
+        }
+        const tbl = document.getElementsByTagName("tr"); 
+        for(var i=1;i<tbl.length;i++){
+            var row = tbl[i];
+            var prevrow;
+            if(i==1){
+                prevrow = tbl[i];
+            }
+            else{
+                prevrow = tbl[i-1];
+            }
+            var currentClient = row.getElementsByTagName("td")[2].innerHTML;
+            var prevClient = prevrow.getElementsByTagName("td")[2].innerHTML;
+            if(i<tbl.length-1){
+                var prevEnd = row.getElementsByTagName("td")[1].innerHTML;
+            }
+            else{
+                var prevEnd = actualEnd;
+            } 
+            if((currentClient == "" && prevClient == "") && i != 1){
+                document.getElementById(tbl[i-1].getAttribute("id")).getElementsByTagName("td")[1].innerHTML =  prevEnd;
+                document.getElementById("tblData").deleteRow(i);
+                i=i-1;
+            }
+            else if(currentClient == ""){
+                row.setAttribute("style", "background-color: #FF6666");
+            }
+        }
+    }
+};
+
+    (function(webapi, $){
+    function safeAjax(ajaxOptions) {
+        var deferredAjax = $.Deferred();
+
+        shell.getTokenDeferred().done(function (token) {
+            // add headers for AJAX
+            if (!ajaxOptions.headers) {
+                $.extend(ajaxOptions, {
+                    headers: {
+                        "__RequestVerificationToken": token
+                    }
+                }); 
+            } else {
+                ajaxOptions.headers["__RequestVerificationToken"] = token;
+            }
+            $.ajax(ajaxOptions)
+                .done(function(data, textStatus, jqXHR) {
+                    validateLoginSession(data, textStatus, jqXHR, deferredAjax.resolve);
+                }).fail(deferredAjax.reject); //AJAX
+        }).fail(function () {
+            deferredAjax.rejectWith(this, arguments); // on token failure pass the token AJAX and args
+        });
+
+        return deferredAjax.promise();	
+    }
+    webapi.safeAjax = safeAjax;
+    })(window.webapi = window.webapi || {}, jQuery)
+
+    document.getElementById("myButtonBack").onclick = function () {
+        location.href = "https://site-xsitg.powerappsportals.com/Approvals/?user={{timesheetlist.results.entities[0].cr65c_supervisorid}}&status=161350001";
+    };
+
+    document.getElementById("myButtonApp").onclick = function () {
+        var confirmFlag = confirm("Are you sure you want to approve this timeSheet?");
+        if(confirmFlag){
+            document.getElementById("myButtonApp").setAttribute("disabled",true);
+            document.getElementById("myButtonRej").setAttribute("disabled",true);
+            document.getElementById("statusPara").innerHTML="Approving...";
+            updateApprove();
+            const weburl = new URL(window.location.href); 
+            const empid = weburl.searchParams.get('emp');
+            const dt =  weburl.searchParams.get('dt');
+            var acupdate = '{ "employeeID" : "'+ empid +'", "timeEntryDate": "'+ dt +'"}';
+            var req = new XMLHttpRequest();
+            var url = "https://prod-186.westus.logic.azure.com:443/workflows/ac6c8fefe3bd41c79b38d3c71d0eba43/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xXGuXBxalmw8g9TnTnoD36TCZjZFED-5fJlO_FfYZqc";
+            req.open("POST", url, true);
+            req.setRequestHeader('Content-Type', 'application/json');
+            req.send(acupdate);
+            req.onreadystatechange = function() { // listen for state changes
+            if (req.readyState == 4 && req.status == 200) { // when completed we can move away
+              document.getElementById("statusPara").innerHTML = "Approved"
+              setTimeout(loadApproval(),30000);
+           }
+        }
+    }
+}
+
+    document.getElementById("myButtonRej").onclick = function () {
+        const totalRows = $("tr").length;
+        var currentRow = 1;
+        var confirmFlag = confirm("Are you sure you want to reject this timesheet?");
+        if(confirmFlag){
+            document.getElementById("myButtonApp").setAttribute("disabled",true);
+            document.getElementById("myButtonRej").setAttribute("disabled",true);
+            document.getElementById("statusPara").innerHTML="Rejecting...";
+            updateReject();
+        }
+        }
+    function loadApproval(){
+        window.location.href = "https://site-xsitg.powerappsportals.com/Approvals/?user={{timesheetlist.results.entities[0].cr65c_supervisorid}}&status=161350001";
+    }
+    
+    function updateApprove(){
+        var allRows = document.getElementsByTagName("tr");
+        let value = {
+        "cr65c_approvalstatus": "161350002"
+        };
+        webapi.safeAjax({
+                        type: "PATCH",
+                        url: "/_api/cr65c_timesheetlists(" + allRows[1].id + ")",
+                        contentType: "application/json",
+                        data: JSON.stringify(value),
+                        success: function(res) {
+                         console.log("done");
+                        }
+                        });                
+        }
+                
+    function updateReject(curID,curVal){        
+        var allRows = document.getElementsByTagName("tr");
+        let value = {
+        "cr65c_approvalstatus": "161350003"
+        };
+        webapi.safeAjax({
+                        type: "PATCH",
+                        url: "/_api/cr65c_timesheetlists(" + allRows[1].id + ")",
+                        contentType: "application/json",
+                        data: JSON.stringify(value),
+                        success: function(res) {
+                            loadApproval();
+                        }
+                        });    
+    }
+</script>

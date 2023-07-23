@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" rel="stylesheet" />
+  <style>
+
+    /* Styles for the table container */
+    main {
+      padding-top: 70px; /* Adjust this value to leave space for the fixed header */
+      padding-bottom: 50px; /* Adjust this value to leave space for the fixed footer */
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    form {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    input::placeholder{
+      font-weight: lighter ;
+      font-size: small;
+    }
+    
+    input[type="submit"] {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+    /* Add your additional styles here */
+
+    /* Media queries for mobile devices */
+    @media (max-width: 767px) {
+
+      main {
+        padding-top: 40px;
+        padding-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<main>
+<form>
+    <label for="EmpNum">Employee Number:</label>
+    <input type="text" id="EmpNum" name="EmpNum" placeholder="Enter your employee number" value="{{request.params['user']}}" required>
+    
+    <label for="Ques1">First School Name:</label>
+    <input type="text" id="Ques1" name="Ques1" placeholder="Enter your answer" required>
+
+    <label for="Ques2">City Born:</label>
+    <input type="text" id="Ques2" name="Ques2" placeholder="Enter your answer" required>
+
+    <button id="Validate" class="btn btn-success btn-large" style="margin-top: 10px;" onclick="GetUser(document.getElementById('EmpNum').value,document.getElementById('Ques1').value,document.getElementById('Ques2').value)" type="button" 
+    value="https://prod-44.westus.logic.azure.com:443/workflows/c4ea479ce76f4985b312ac3f6620454d/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=OJAIf1aywLaNNFtxEK0ac9X97IQgBXBC775KKgjTOPk" >Validate</button>
+</form>
+<label id="status" style="text-align: center;padding-top: 15px;"></label>
+
+</main>
+</body>
+</html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+<script type="text/javascript">
+    
+    function GetUser(empno,Ques1,Ques2) {
+        
+        document.getElementById("status").innerText = "Validating...";
+        document.getElementById("Validate").setAttribute("disabled",true);
+        var acupdate = '{ "employeeNumber" : "' + empno + '", "Question1": "' + Ques1 +'", "Question2": "' + Ques2 +'"}';
+        var req = new XMLHttpRequest();
+        var url = "https://prod-44.westus.logic.azure.com:443/workflows/c4ea479ce76f4985b312ac3f6620454d/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=OJAIf1aywLaNNFtxEK0ac9X97IQgBXBC775KKgjTOPk";
+        req.open("POST", url, true);
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.send(acupdate);
+        req.onreadystatechange = function() { // listen for state changes
+            if (req.readyState == 4 && req.status == 200) { // when completed we can move away
+                  window.location.href = "https://site-xsitg.powerappsportals.com/Registration/UpdateDetails/?emp="+req.responseText;
+                }
+            else if(req.status == 201){
+              document.getElementById("Validate").removeAttribute("disabled");
+              document.getElementById("status").innerText = "Invalid Employee Details or Already Registered";
+            }
+            }
+    }
+</script>
